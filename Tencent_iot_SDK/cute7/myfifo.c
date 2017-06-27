@@ -31,7 +31,7 @@ int fifo_init(const char * fifo_name)
     //以只写阻塞方式打开FIFO文件，以只读方式打开数据文件  
     pipe_fd = open(fifo_name, open_mode);  
     printf("Process %d result %d\n", getpid(), pipe_fd);  
-    return 0
+    return 0;
 }
 int fifo_send(char *msg)
 {
