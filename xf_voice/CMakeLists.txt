@@ -19,7 +19,7 @@ target_link_libraries(xf_tts ${catkin_LIBRARIES} /Robot/voice/lib/libmsc.so  -ld
 add_dependencies(xf_tts xf_voice_generate_messages_cpp)
 
 add_executable(xf_asr src/xf_asr.cpp)
-target_link_libraries(xf_asr ${catkin_LIBRARIES} /Robot/voice/lib/libmsc.so  -ldl -lpthread -lm -lrt -lasound)
+target_link_libraries(xf_asr ${catkin_LIBRARIES} /Robot/voice/lib/libmsc.so -ldl -lpthread -lm -lrt -lasound)
 add_dependencies(xf_asr xf_voice_generate_messages_cpp)
 
 #add_executable(wakeup src/wakeup.cpp)
