@@ -6,11 +6,12 @@
 #include <sys/stat.h>  
 #include <stdio.h>  
 #include <string.h>  
+#include "myfifo.h"
 int pipe_fd = -1;  
 int data_fd = -1;  
 int res = 0;  
-const int open_mode = O_WRONLY;  
-int bytes_sent = 0;  
+int bytes_sent = 0; 
+char *fifoname="/tmp/iot_msg_fifo";
 char buffer[PIPE_BUF + 1];  
  
 int fifo_init(const char * fifo_name)  
@@ -18,8 +19,7 @@ int fifo_init(const char * fifo_name)
 
     if(access(fifo_name, F_OK) == -1)  
     {  
-
-        res = mkfifo(fifo_name, 0777);  
+        res = mkfifo(fifo_name, O_CREAT|O_EXCL|0755);  
         if(res != 0)  
         {  
             fprintf(stderr, "Could not create fifo %s\n", fifo_name);  
@@ -27,68 +27,23 @@ int fifo_init(const char * fifo_name)
         }  
     }  
   
-    printf("Process %d opening FIFO O_WRONLY\n", getpid());  
+    printf("Process %d opening FIFO O_WRONLY,file_name=%s\n", getpid(),fifo_name);  
     //以只写阻塞方式打开FIFO文件，以只读方式打开数据文件  
-    pipe_fd = open(fifo_name, open_mode);  
+    pipe_fd = open(fifo_name, O_WRONLY|O_NONBLOCK);  
     printf("Process %d result %d\n", getpid(), pipe_fd);  
     return 0;
 }
 int fifo_send(char *msg)
 {
     if(pipe_fd != -1)  
-    {  
-	char input[100];
-	while (scanf("%s", input)) {
-		if ( !strcmp(input, "quit") ) {
-			
-			break;
-		}else
-		{
-		    res = write(pipe_fd, input, strlen(input));  
-		    if(res == -1)  
-		    {  
-		        fprintf(stderr, "Write error on pipe\n");  
-		        exit(EXIT_FAILURE);  
-		    }  
-
-		}
-		sleep(1);
-	}
+    {       
+            printf("begin write to fifo\r\n");
+	    res = write(pipe_fd, msg, strlen(msg));  
+	    if(res == -1)  
+	    {  
+		fprintf(stderr, "Write error on pipe\n");  
+		exit(EXIT_FAILURE);  
+	    }  
+    }else printf("err while write to fifo\r\n");
 }
-}
-int main()  
-{  
-    int pipe_fd = -1;  
-    int res = 0;  
-    pipe_fd = fifo_init("/tmp/qqmsg_fifo");  
-  
-    if(pipe_fd != -1)  
-    {  
-	char input[100];
-	while (scanf("%s", input)) {
-		if ( !strcmp(input, "quit") ) {
-			
-			break;
-		}else
-		{
-		    res = write(pipe_fd, input, strlen(input));  
-		    if(res == -1)  
-		    {  
-		        fprintf(stderr, "Write error on pipe\n");  
-		        exit(EXIT_FAILURE);  
-		    }  
 
-		}
-		sleep(1);
-	}
-	
-        close(pipe_fd);  
-	return 0;
-
-     }  
-    else  
-        exit(EXIT_FAILURE);  
-  
-    printf("Process %d finished\n", getpid());  
-    exit(EXIT_SUCCESS);  
-} 

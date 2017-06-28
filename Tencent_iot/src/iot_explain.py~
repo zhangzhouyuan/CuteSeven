@@ -41,7 +41,7 @@ def timer():
     rate.sleep()
     read_fd = os.open(readfifo, os.O_RDONLY)  
     while True:  
-        in_msg = os.read(read_fd, 1000)  
+        in_msg = os.read(read_fd, 100)  
         print 'Get:>' + in_msg  
         callback(in_msg)
         rate.sleep() 
