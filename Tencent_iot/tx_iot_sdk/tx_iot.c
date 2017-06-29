@@ -23,20 +23,26 @@ unsigned int product_id=1700005043;
 // 处理设备关心的控制端指令
 void on_receive_datapoint(unsigned long long from_id, tx_data_point * data_points, int data_points_count)
 {
-  char cmd[1000];
-  int i = 0;
-  while (i < data_points_count) {
-      if (data_points[i].id == 10000) {
-	printf("receive a msg  \n\r");
-	printf("dp_id=%d\n",data_points[i].id );
-        sprintf(cmd,data_points[i].value);
-	fifo_send(cmd);
-	printf(cmd);
-        printf("\r\n");
-      }
+    char cmd[1000];
+    int i = 0;
+    while (i < data_points_count) {
+        if (data_points[i].id == 10000) {
+            printf("receive a msg  \n\r");
+            printf("dp_id=%d\n",data_points[i].id );
+            sprintf(cmd,data_points[i].value);
+            fifo_send(cmd);
+            printf(cmd);
+            printf("\r\n");
+        }else
+	{
+            printf("receive raw \n\r");
+            sprintf(cmd,data_points[i].value);
+            printf(cmd);
+            printf("\r\n");	    
+	}
 
-      ++i;
-  }
+        ++i;
+    }
 }
 // DP处理 - 查询传感器列表
 void on_query_subdevicelist(unsigned long long from_id, tx_data_point * datapoint) {
@@ -68,7 +74,8 @@ void on_online_status(int old, int new) {
 /**
  * 文件传输完成后的结果通知
  */
-void ontransfercomplete(unsigned long long transfer_cookie, int err_code, tx_file_transfer_info tran_info) {
+void ontransfercomplete(unsigned long long transfer_cookie, int err_code, tx_file_transfer_info * tran_info) {
+char cmd[1000];
     printf("================ontransfer complete=====transfer_cookie == %lld ====================\n", transfer_cookie);
     // 这个 transfer_cookie 是SDK内部执行文件传输（接收或发送） 任务 保存的一个标记，在回调完这个函数后，transfer_cookie 将失效
     // 可以根据 transfer_cookie 查询文件的信息
@@ -77,7 +84,10 @@ void ontransfercomplete(unsigned long long transfer_cookie, int err_code, tx_fil
     // tx_file_transfer_info ftInfo = {0};
     // tx_query_transfer_info(transfer_cookie, &ftInfo);
 
-    printf("errcode %d, bussiness_name [%s], file path [%s]\n", err_code, tran_info.bussiness_name,  tran_info.file_path);
+    printf("errcode %d, bussiness_name [%s], file path [%s], file type [%d]\n", err_code, tran_info->bussiness_name,  tran_info->file_path,tran_info->file_type);
+    sprintf(cmd,"{\"type\":\"file\",\"bussiness_name\":\"%s\",\"errcode\":%d,\"file_path\":\"%s\"}\n\r",tran_info->bussiness_name,err_code,tran_info->file_path);
+    fifo_send(cmd);
+    printf(cmd);
     printf("===============================================================================\n");
 }
 
@@ -197,11 +207,11 @@ bool initDevice() {
     // temp_path：可能会在该目录下写入临时文件
     // temp_path_capicity：这个参数实际没有用的，可以忽略
     tx_init_path init_path = {0};
-    init_path.system_path = "./";
+    init_path.system_path = "/Robot/Tencent_iot_SDK/";
     init_path.system_path_capicity = 100 * 1024;
-    init_path.app_path = "./";
+    init_path.app_path = "/Robot/Tencent_iot_SDK/";
     init_path.app_path_capicity = 1024 * 1024;
-    init_path.temp_path = "./";
+    init_path.temp_path = "/Robot/Tencent_iot_SDK/";
     init_path.temp_path_capicity = 10 * 1024;
 
     // 设置log输出函数，如果不想打印log，则无需设置。
@@ -213,20 +223,21 @@ bool initDevice() {
 	if (err_null == ret) {
 		printf(" >>> tx_init_device success\n");
 	}
-	else {
-		printf(" >>> tx_init_device failed [%d]\n", ret);
-		return false;
-	}
-	
-   // 设置文件传输通知，并设置接收文件的目录，这里设置为 ./recv/
+    else {
+        printf(" >>> tx_init_device failed [%d]\n", ret);
+        return false;
+    }
+
+    // 设置文件传输通知，并设置接收文件的目录
     tx_file_transfer_notify fileTransferNotify = {0};
     fileTransferNotify.on_transfer_complete = ontransfercomplete;
-    tx_init_file_transfer(fileTransferNotify, "./recv/");
-   //挂接datapoint的处理函数
-   tx_data_point_notify api_data_point = {0};
-   api_data_point.on_receive_data_point = on_receive_datapoint;
-   tx_init_data_point(&api_data_point);
-	return true;
+    system("mkdir /tmp/recv/ -p");
+    tx_init_file_transfer(fileTransferNotify, "/tmp/recv/");
+    //挂接datapoint的处理函数
+    tx_data_point_notify api_data_point = {0};
+    api_data_point.on_receive_data_point = on_receive_datapoint;
+    tx_init_data_point(&api_data_point);
+    return true;
 }
 
 

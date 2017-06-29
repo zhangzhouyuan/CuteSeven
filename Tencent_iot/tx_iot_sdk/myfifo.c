@@ -19,7 +19,7 @@ int fifo_init(const char * fifo_name)
 
     if(access(fifo_name, F_OK) == -1)  
     {  
-        res = mkfifo(fifo_name, O_CREAT|O_EXCL|0755);  
+        res = mkfifo(fifo_name, 0777);  
         if(res != 0)  
         {  
             fprintf(stderr, "Could not create fifo %s\n", fifo_name);  

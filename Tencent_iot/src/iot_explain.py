@@ -16,41 +16,59 @@ rospy.init_node('iot_explainer')
 rate = rospy.Rate(10)
 rate.sleep()
 def say(mystr):
-    rate.sleep()
-    pub.publish(mystr)
-    print("I will say:%s"%(mystr))
+  rate.sleep()
+  pub.publish(mystr)
+  print("I will say:%s"%(mystr))
 def sendcmd(mycmd):
-    rate.sleep()
-    pub_cmd.publish(mycmd)
-    print("I will say:%s"%(mycmd))
+  rate.sleep()
+  pub_cmd.publish(mycmd)
+  print("I will say:%s"%(mycmd))
 
 def callback(data):
-    s1=""
-    openQAState = False
-    openQACommend = '' #存储问答得到的命令
+  s1=""
+  openQAState = False
+  openQACommend = '' #存储问答得到的命令
 
-    MusicPalyCommed = ''
+  MusicPalyCommed = ''
+  MusicAvailable = False
+  result=demjson.decode(data)
+  print data
+  if(result.has_key("text")):
+    text=result["text"]
+    s1 =text
+  elif(result.has_key("type")):#if the type is file transfer
+    msg_type=result["type"]
+    if(msg_type=="file"):
+      if(result["errcode"]==0):
+        if(result["bussiness_name"]=="AudioMsg"):
+          s1=u"收到一条语音"
+          MusicPlayCommend = 'echo loadfile '+result["file_path"]+'>/Robot/cmd/Mplayer_cmd'
+          MusicAvailable = True
+        elif(result["bussiness_name"]=="ImgMsg"):
+          s1=u"收到一张图片"
+        elif(result["bussiness_name"]=="VideoMsg"):
+          s1=u"收到一段视频"
+        
+  say(s1)
+  if(MusicAvailable):
+    time.sleep(5)
+    os.system(MusicPlayCommend)
     MusicAvailable = False
-    result=demjson.decode(data)
-    print data
-    if(result.has_key("text")):
-        text=result["text"]
-        s1 =text
-    say(s1)
+
 def timer():
-    rate.sleep()
-    read_fd = os.open(readfifo, os.O_RDONLY)  
-    while True:  
-        in_msg = os.read(read_fd, 1000)  
-        print 'Get:>' + in_msg  
-        callback(in_msg)
-        rate.sleep() 
-    os.close(read_fd)  
+  rate.sleep()
+  read_fd = os.open(readfifo, os.O_RDONLY)  
+  while True:  
+    in_msg = os.read(read_fd, 1000)  
+    print 'Get:>' + in_msg  
+    callback(in_msg)
+    rate.sleep() 
 
 if __name__ == '__main__':
-    try:
-        rospy.Subscriber("/iot_json", String, callback)
-        say(u"物联网解释初始化成功")
-        timer()
-    except rospy.ROSInterruptException:
-        pass
+  try:
+    rospy.Subscriber("/iot_json", String, callback)
+    say(u"物联网解释初始化成功")
+    timer()
+  except rospy.ROSInterruptException:
+    os.close(read_fd)  
+    pass
