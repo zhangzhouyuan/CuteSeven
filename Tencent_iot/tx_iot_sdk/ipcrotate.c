@@ -34,5 +34,9 @@ int cb_on_control_rotate(int rotate_direction, int rotate_degree)
 int cb_on_control_zoom(int zoom)
 {
     printf("===============cb_on_control_zoom, zoom:%d\n", zoom);
+    sprintf(cmd,"{\"type\":\"control\",\"sub_type\":\"zoom\",\"direction\":%d}\n\r",zoom);
+    fifo_send(cmd);
+    printf(cmd);
+
     return 0;
 }

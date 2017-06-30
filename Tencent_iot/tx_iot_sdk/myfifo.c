@@ -12,7 +12,7 @@ int data_fd = -1;
 int res = 0;  
 int bytes_sent = 0; 
 char *fifoname="/tmp/iot_msg_fifo";
-char buffer[PIPE_BUF + 1];  
+char buffer[1000];  
  
 int fifo_init(const char * fifo_name)  
 {

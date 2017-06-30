@@ -58,6 +58,11 @@ def callback(data):
           s1=u"向前"
         elif(result["direction"]==4):
           s1=u"向后"
+      elif(result["sub_type"]=="zoom"):
+        if(result["direction"]==1):
+          s1=u"启动"
+        elif(result["direction"]==-1):
+          s1=u"停止"
       
         
   say(s1)

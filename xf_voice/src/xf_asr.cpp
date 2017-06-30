@@ -363,6 +363,7 @@ int recode_asr(void *ptr)
         usleep(150 * 1000);
     }
     printf("\n识别结束%d：\n",loops);
+    system("echo aa>/tmp/my_fifo_record_ok");
     printf("=============================================================\n");
     if (NULL != rec_rslt)
     {

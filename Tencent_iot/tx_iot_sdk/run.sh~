@@ -1,2 +1,4 @@
 export LD_LIBRARY_PATH=/Robot/Tencent_iot_SDK/lib
-./cute7
+cd ~/catkin_ws/src/Tencent_iot/tx_iot_sdk/
+#./cute7
+./ipcamera_demo

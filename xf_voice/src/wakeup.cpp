@@ -9,28 +9,29 @@
 #include <sys/stat.h>
 #define GETIT  system("echo loadfile /Robot/voice/wav/Begin.wav>/Robot/cmd/Mplayer_cmd")
 
-#define FIFO_NAME "/tmp/my_fifo"
+#define FIFO_NAME "/tmp/my_fifo_wakeup"
 #define BUFFER_SIZE 100
 #define TEN_MEG (1024 * 100)
-int pipe_fd;
+
 int open_mode = O_RDONLY;
 int bytes = 0;
 char buffer[BUFFER_SIZE + 1];
 
-int Init_fifo(void)
+int Init_fifo(char * path)
 { 
+    int pipe_fd;
     int res;
-    if (access(FIFO_NAME, F_OK) == -1)
+    if (access(path, F_OK) == -1)
     {
-        res = mkfifo(FIFO_NAME, 0777);
+        res = mkfifo(path, 0777);
         if (res != 0)
         {
-            fprintf(stderr, "Could not create fifo %s\n", FIFO_NAME);
+            fprintf(stderr, "Could not create fifo %s\n", path);
             return -1;
         }
     }
     printf("Process %d opening FIFO O_WRONLY\n", getpid());
-    pipe_fd = open(FIFO_NAME, open_mode);
+    pipe_fd = open(path, open_mode);
     printf("Process %d result %d\n", getpid(), pipe_fd);
     return pipe_fd;
 }
@@ -47,11 +48,12 @@ int read_fifo(char *buff,int fd)
             {
                 printf("res is [%d] %s\n",res,buff);
             }
-        }
-      return res;
+    }
+    return res;
 }
 int main(int argc,char** argv)
 {
+    int pipe_fd;
     int res;
     int i=0;
     std_msgs::String msg;
@@ -60,7 +62,7 @@ int main(int argc,char** argv)
     ros::Rate loop(10);
     ros::Publisher pub=n.advertise<std_msgs::String>("xfwakeup",1000);
      GETIT;
-     Init_fifo();
+     pipe_fd=Init_fifo(FIFO_NAME);
      std::cout<<"wakeup node  Init OK"<<std::endl;
      while(ros::ok())
      {

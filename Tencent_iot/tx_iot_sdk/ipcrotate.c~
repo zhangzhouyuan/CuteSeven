@@ -23,7 +23,7 @@ int cb_on_control_rotate(int rotate_direction, int rotate_degree)
 {
     printf("===============cb_on_control_rotate, rotate_direction:%d, rotate_degree:%d\n", rotate_direction, rotate_degree);
 
-    sprintf(cmd,"{\"type\":\"control\",\"sub_type\":\"rotate\",\"direction\":%d,\"degree\":\"%d\"}\n\r",rotate_direction,rotate_degree);
+    sprintf(cmd,"{\"type\":\"control\",\"sub_type\":\"rotate\",\"direction\":%d,\"degree\":\%d\}\n\r",rotate_direction,rotate_degree);
     fifo_send(cmd);
     printf(cmd);
 
