@@ -48,6 +48,17 @@ def callback(data):
           s1=u"收到一张图片"
         elif(result["bussiness_name"]=="VideoMsg"):
           s1=u"收到一段视频"
+    elif(msg_type=="control"):
+      if(result["sub_type"]=="rotate"):
+        if(result["direction"]==1):
+          s1=u"向左"
+        elif(result["direction"]==2):
+          s1=u"向右"
+        elif(result["direction"]==3):
+          s1=u"向前"
+        elif(result["direction"]==4):
+          s1=u"向后"
+      
         
   say(s1)
   if(MusicAvailable):

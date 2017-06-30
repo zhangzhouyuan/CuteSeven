@@ -6,6 +6,6 @@ all:app1
 clean:
 	-rm  cute7
 
-app1:tx_iot.c myfifo.c
-	$(CC) tx_iot.c  myfifo.c -o cute7 -O0 -g3 -I. -I"/Robot/Tencent_iot_SDK/include" -L"/Robot/Tencent_iot_SDK/lib" -ltxdevicesdk -lpthread -ldl -lstdc++
+app1:tx_iot.c myfifo.c iot_video.c
+	$(CC) tx_iot.c  myfifo.c iot_video.c -o cute7 -O0 -g3 -I. -I"/Robot/Tencent_iot_SDK/include" -L"/Robot/Tencent_iot_SDK/lib" -ltxdevicesdk -lpthread -ldl -lstdc++
 

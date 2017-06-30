@@ -22,6 +22,8 @@ add_executable(xf_asr src/xf_asr.cpp)
 target_link_libraries(xf_asr ${catkin_LIBRARIES} /Robot/voice/lib/libmsc.so -ldl -lpthread -lm -lrt -lasound)
 add_dependencies(xf_asr xf_voice_generate_messages_cpp)
 
-#add_executable(wakeup src/wakeup.cpp)
-#target_link_libraries(wakeup ${catkin_LIBRARIES}   -lmraa)
-#add_dependencies(wakeup xf_voice_generate_messages_cpp)
+add_executable(wakeup src/wakeup.cpp)
+target_link_libraries(wakeup ${catkin_LIBRARIES} )
+add_dependencies(wakeup xf_voice_generate_messages_cpp)
+
+

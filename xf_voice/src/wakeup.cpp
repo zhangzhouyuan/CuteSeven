@@ -1,62 +1,83 @@
-#include"mraa.hpp"
 #include"iostream"
 #include"ros/ros.h"
 #include"std_msgs/String.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #define GETIT  system("echo loadfile /Robot/voice/wav/Begin.wav>/Robot/cmd/Mplayer_cmd")
- mraa::Uart * dev;
- void Init_uart(void)
+
+#define FIFO_NAME "/tmp/my_fifo"
+#define BUFFER_SIZE 100
+#define TEN_MEG (1024 * 100)
+int pipe_fd;
+int open_mode = O_RDONLY;
+int bytes = 0;
+char buffer[BUFFER_SIZE + 1];
+
+int Init_fifo(void)
+{ 
+    int res;
+    if (access(FIFO_NAME, F_OK) == -1)
+    {
+        res = mkfifo(FIFO_NAME, 0777);
+        if (res != 0)
+        {
+            fprintf(stderr, "Could not create fifo %s\n", FIFO_NAME);
+            return -1;
+        }
+    }
+    printf("Process %d opening FIFO O_WRONLY\n", getpid());
+    pipe_fd = open(FIFO_NAME, open_mode);
+    printf("Process %d result %d\n", getpid(), pipe_fd);
+    return pipe_fd;
+}
+int read_fifo(char *buff,int fd)
 {
-    try {
-        dev = new mraa::Uart("/dev/ttyS4");
-    } catch (std::exception& e) {
-        std::cout << "Error while setting up raw UART, do you have a uart?" << std::endl;
-        std::terminate();
-    }
-    if (dev->setBaudRate(115200) != mraa::SUCCESS) {
-        std::cout << "Error setting parity on UART" << std::endl;
-    }
-    if (dev->setMode(8, mraa::UART_PARITY_NONE, 1) != mraa::SUCCESS) {
-        std::cout << "Error setting parity on UART" << std::endl;
-    }    if (dev->setFlowcontrol(false, false) != mraa::SUCCESS) {
-        std::cout << "Error setting flow control UART" << std::endl;
-    }
-    dev->writeStr("RESET\n");
+    int res;
+    if (fd != -1)
+    {
+            res = read(fd, buff, BUFFER_SIZE);
+            if (res == -1)
+            {
+                fprintf(stderr, "Write error on pipe\n");
+            }else if (res >0)
+            {
+                printf("res is [%d] %s\n",res,buff);
+            }
+        }
+      return res;
 }
 int main(int argc,char** argv)
 {
-    int i;
+    int res;
+    int i=0;
     std_msgs::String msg;
     ros::init(argc,argv,"wakeup");
     ros::NodeHandle n;
     ros::Rate loop(10);
     ros::Publisher pub=n.advertise<std_msgs::String>("xfwakeup",1000);
-     Init_uart();
      GETIT;
-     std::cout<<"uart Init OK"<<std::endl;
+     Init_fifo();
+     std::cout<<"wakeup node  Init OK"<<std::endl;
      while(ros::ok())
      {
-         if(dev->dataAvailable())
+         res=read_fifo(buffer,pipe_fd);
+         if(res>0)
          {
-             std::string s;
-             while(dev->dataAvailable())
-             {
-                 s+=dev->readStr(1);
-             }
-             i=s.find("WAKE UP!angle:");
-             if(i!=std::string::npos)
-             {
                  std::stringstream ss;
-                  GETIT;
-                 ss <<s.substr(i+14,3);
+                 GETIT;
+                 ss <<"";
                  msg.data = ss.str();
-                 std::cout<<"get wakesign!"<<i<<">"<<ss.str()<<std::endl;
+                 std::cout<<"get wakesign!"<<i<<">"<<std::endl;
                  pub.publish(msg);
-                 sleep(5);
-                dev->writeStr("RESET\n");
-             }
+                //dev->writeStr("RESET\n");
+         }
+
          }
          ros::spinOnce();
          loop.sleep();
-     }
 
 }
