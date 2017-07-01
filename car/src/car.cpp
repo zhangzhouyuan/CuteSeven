@@ -407,7 +407,7 @@ void* callback(void* ptr)
         }
     }
 }
-void control_callback(const balance::Num::ConstPtr& msg)
+void control_callback(const car::Num::ConstPtr& msg)
 {
     float xspeed,turnspeed;
     float kx=20;
@@ -448,7 +448,7 @@ void cmd_callback(const std_msgs::String::ConstPtr& msg)
 {
     std::string cmd;
     cmd=msg->data;
-    std::cout<<"balance::Get comond:"<<cmd<<std::endl;
+    std::cout<<"car::Get comond:"<<cmd<<std::endl;
 }
 
 int flag_get_guicmd;
@@ -501,13 +501,13 @@ int main(int argc ,char ** argv)
 {
     float count;
     pthread_t pid,pid_cmd;
-    ros::init(argc, argv, "balance");
+    ros::init(argc, argv, "car");
     ros::NodeHandle n;
     ros::Rate loop_rate(20);
     ros::Subscriber sub = n.subscribe("/control_speed", 1000, control_callback);
     ros::Subscriber pub_control= n.subscribe("/control_cmd",10000,cmd_callback);
-    ros::Publisher pub_speed = n.advertise<balance::Num>("/wheel_speed", 1000);
-    balance::Num speed;
+    ros::Publisher pub_speed = n.advertise<car::Num>("/wheel_speed", 1000);
+    car::Num speed;
     dev.Init("/dev/ttyUSB0",115200);
     pthread_create(&pid, NULL, callback, NULL);
     pthread_create(&pid, NULL, callback_get_guicmd, NULL);
