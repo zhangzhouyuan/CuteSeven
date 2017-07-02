@@ -35,7 +35,7 @@ def callback(data):
     result=demjson.decode(data)
   except:
     print u"json解码发生错误"
-    result= {'Null': '0'}
+    result= {'Null': 0}
   print data
   if(result.has_key("text")):
     text=result["text"]
