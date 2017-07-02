@@ -16,7 +16,8 @@ char buffer[1000];
  
 int fifo_init(const char * fifo_name)  
 {
-
+  printf("hhahahahahahahahahahaah");
+/*
     if(access(fifo_name, F_OK) == -1)  
     {  
         res = mkfifo(fifo_name, 0777);  
@@ -28,8 +29,8 @@ int fifo_init(const char * fifo_name)
     }  
   
     printf("Process %d opening FIFO O_WRONLY,file_name=%s\n", getpid(),fifo_name);  
-    //以只写阻塞方式打开FIFO文件，以只读方式打开数据文件  
-    pipe_fd = open(fifo_name, O_WRONLY|O_NONBLOCK);  
+*/    //以只写阻塞方式打开FIFO文件，以只读方式打开数据文件  
+    pipe_fd = open(fifo_name, O_WRONLY);  
     printf("Process %d result %d\n", getpid(), pipe_fd);  
     return 0;
 }

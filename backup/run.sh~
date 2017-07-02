@@ -6,6 +6,7 @@ run()
 }
 echo "准备启动"
 mkfifo /tmp/my_fifo_wakeup
+mkfifo /tmp/iot_msg_fifo
 run "roscore"
 sleep 3
 run "roslaunch xf_voice voice.launch"

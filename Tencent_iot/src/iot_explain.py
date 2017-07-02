@@ -77,7 +77,7 @@ def callback(data):
 
 def timer():
   rate.sleep()
-  os.system("mkfifo /tmp/iot_msg_fifo")
+  #os.system("mkfifo /tmp/iot_msg_fifo")
   read_fd = os.open(readfifo, os.O_RDONLY)  
   while True:  
     in_msg = os.read(read_fd, 1000)  

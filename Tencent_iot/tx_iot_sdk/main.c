@@ -373,8 +373,8 @@ int main(int argc, char* argv[]) {
     if ( !initDevice() ) {
         return -1;
     }
-    pipe_fd=Init_revfifo(FIFO_NAME_1);
     fifo_init(fifoname);
+    pipe_fd=Init_revfifo(FIFO_NAME_1);
 
     // 你可以在做其他相关的事情
     // ...
