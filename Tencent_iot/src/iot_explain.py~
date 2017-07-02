@@ -35,7 +35,7 @@ def callback(data):
     result=demjson.decode(data)
   except:
     print u"json解码发生错误"
-    result= {'Null': 0}
+    result= {'Null': '0'}
   print data
   if(result.has_key("text")):
     text=result["text"]
@@ -46,7 +46,7 @@ def callback(data):
       if(result["errcode"]==0):
         if(result["bussiness_name"]=="AudioMsg"):
           s1=u"收到一条语音"
-          MusicPlayCommend = 'echo loadfile '+result["file_path"]+'>/Robot/cmd/Mplayer_cmd'
+          MusicPlayCommend = 'echo loadfile '+result["file_path"]+'>/tmp/Mplayer_cmd'
           MusicAvailable = True
         elif(result["bussiness_name"]=="ImgMsg"):
           s1=u"收到一张图片"
@@ -77,7 +77,7 @@ def callback(data):
 
 def timer():
   rate.sleep()
-  os.system("/tmp/iot_msg_fifo")
+  os.system("mkfifo /tmp/iot_msg_fifo")
   read_fd = os.open(readfifo, os.O_RDONLY)  
   while True:  
     in_msg = os.read(read_fd, 1000)  
