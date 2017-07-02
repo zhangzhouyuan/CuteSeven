@@ -13,7 +13,7 @@ sleep 3
 run " rosrun car car"
 sleep 3
 run "rosrun tx_iot iot_explain.py"
-sleep 3
+sleep 10
 run " ~/catkin_ws/src/Tencent_iot/tx_iot_sdk/run.sh"
 sleep 3
 run " ~/catkin_ws/src/backup/key.sh"
