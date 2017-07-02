@@ -21,15 +21,6 @@ GetKey()
 			1) echo "start the car"
 			sendcmd 1
 			;;
-			3) echo "low speed"
-			sendcmd 3
-			;;
-			4) echo "high speed"
-			sendcmd 4
-			;;
-			5) echo "stop"
-			sendcmd 5
-			;;
 			w) echo "go"
 			sendcmd w
 			;;

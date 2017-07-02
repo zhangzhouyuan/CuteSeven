@@ -462,8 +462,7 @@ int main(int argc,char **argv)
     }
 
 	MSPLogout();
-	printf("请按任意键退出...\n");
-	getchar();
+    printf("语音识别节点退出...\n");
 }
 
 

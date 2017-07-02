@@ -457,8 +457,9 @@ std::string gui_cmd;
 void *callback_get_guicmd(void *ptr)
 {
     std::cout<<"Get gui_cmd child begin"<<std::endl;
-    char cmd[] = "cat /Robot/cmd/cmd_of_gui ";
+    char cmd[] = "cat /tmp/cmd_of_gui ";
     FILE *pp;
+    system("mkfifo /tmp/cmd_of_gui ");
     while(1)
    {
     printf("waiting for fifo----");

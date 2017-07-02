@@ -10,7 +10,7 @@
 #include <sstream>
 #include <sys/types.h>
 #include <sys/stat.h>
-#define SAYIT  system("cp  /Robot/voice/wav/say.wav /Robot/voice/wav/temp.wav>/Robot/cmd/Mplayer_cmd");system("echo loadfile /Robot/voice/wav/temp.wav>/Robot/cmd/Mplayer_cmd")
+#define SAYIT  system("cp  /tmp/say.wav /tmp/temp.wav>/tmp/Mplayer_cmd");system("echo loadfile /tmp/temp.wav>/tmp/Mplayer_cmd")
 typedef int SR_DWORD;
 typedef short int SR_WORD ;
 /* wav音频头部格式 */
@@ -157,18 +157,17 @@ void xfcallback(const std_msgs::String::ConstPtr& msg)
 {
   char cmd[2000];
   std::cout<<"I heard,I will say:"<<msg->data.c_str()<<std::endl;
-  xf_tts(msg->data.c_str(),"/Robot/voice/wav/say.wav");
-  sprintf(cmd,"echo %s>/Robot/cmd/saywords",msg->data.c_str());
+  xf_tts(msg->data.c_str(),"/tmp/say.wav");
+  sprintf(cmd,"echo %s>/tmp/saywords",msg->data.c_str());
   popen(cmd,"r");
   SAYIT;
 }
 int main(int argc,char **argv)
 {
-    unlink("/Robot/cmd/Mplayer_cmd");
-    mkfifo("/Robot/cmd/Mplayer_cmd", 0777);
-    popen("mplayer -quiet -slave -input file=/Robot/cmd/Mplayer_cmd -idle","r");
+    system("mkfifo /tmp/Mplayer_cmd");
+    popen("mplayer -quiet -slave -input file=/tmp/Mplayer_cmd -idle","r");
     printf("Mplayer Run Success");
-    const char* filename        = "/Robot/voice/wav/say.wav"; //合成的语音文件名称
+    const char* filename        = "/tmp/say.wav"; //合成的语音文件名称
     const char* text                 = "语音合成模块启动成功！"; //合成文本
     xf_tts(text,filename);
     SAYIT;

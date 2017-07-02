@@ -31,7 +31,11 @@ def callback(data):
 
   MusicPalyCommed = ''
   MusicAvailable = False
-  result=demjson.decode(data)
+  try:
+    result=demjson.decode(data)
+  except:
+    print u"json解码发生错误"
+    result= {'Null': 0}
   print data
   if(result.has_key("text")):
     text=result["text"]
@@ -73,11 +77,13 @@ def callback(data):
 
 def timer():
   rate.sleep()
+  os.system("mkfifo /tmp/iot_msg_fifo")
   read_fd = os.open(readfifo, os.O_RDONLY)  
   while True:  
     in_msg = os.read(read_fd, 1000)  
-    print 'Get:>' + in_msg  
-    callback(in_msg)
+    if len(in_msg)>0:
+     print 'Get:>' + in_msg  
+     callback(in_msg)
     rate.sleep() 
 
 if __name__ == '__main__':
