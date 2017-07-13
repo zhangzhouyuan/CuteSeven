@@ -67,7 +67,7 @@ def callback(data):
                     
     say(s1)
     if(MusicAvailable):
-        time.sleep(2)
+        time.sleep(1)
         os.system(MusicPlayCommend)
         MusicAvailable = False
 

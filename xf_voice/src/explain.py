@@ -42,7 +42,7 @@ def callback(data):
                     result["data"]["result"][0]["name"]
             MusicPlayCommend = 'echo loadfile '+\
                     result["data"]["result"][0]["downloadUrl"]+\
-                    '>/Robot/cmd/Mplayer_cmd'
+                    '>/tmp/Mplayer_cmd'
            # print MusicPlayCommend
             MusicAvailable = True
         elif(service=="openQA"):
