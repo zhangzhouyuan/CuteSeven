@@ -1,0 +1,316 @@
+http://wiki.ros.org/cv_bridge/Tutorials/UsingCvBridgeToConvertBetweenROSImagesAndOpenCVImages
+
+1、Concepts概念
+
+ROS passes around images in its own sensor_msgs/Image message format, but many users will want to use images in conjunction with OpenCV. CvBridge is a ROS library that provides an interface between ROS and OpenCV. CvBridge can be found in the cv_bridge package in the vision_opencv stack.
+ROS以自己的sensor_msgs /图像消息格式传递图像，但是许多用户将希望将图像与OpenCV结合使用。 CvBridge是一个ROS库，提供了ROS和OpenCV之间的接口。 CvBridge可以在visual_opencv堆栈中的cv_bridge包中找到。
+
+In this tutorial, you will learn how to write a node that uses CvBridge to convert ROS images into OpenCV cv::Mat format.
+在本教程中，您将学习如何编写一个使用CvBridge将ROS映像转换为OpenCV cv :: Mat格式的节点。
+
+You will also learn how to convert OpenCV images to ROS format to be published over ROS.
+您还将学习如何将OpenCV图像转换为ROS格式以通过ROS进行发布。
+
+
+1.1Migration from codes written in C-Turtle or earlier
+从C-Turtle或更早版本的代码迁移
+
+There was a major api change ROS Diamondback regarding OpenCV, of which backward compatibility has been maintained for a while but removed in newer distro (eg. hydro), e.g. sensor_msgs/CvBridge. See the design decision. Also this QA is helpful.
+关于OpenCV的ROS Diamondback有一个主要的API变化，其中向后兼容性已经保持一段时间，但在较新的发行版（例如，hydro）中被删除，例如。 sensor_msgs / CvBridge。参见设计决策。此外，这个质量保证是有帮助的。
+
+2、Converting ROS image messages to OpenCV images
+将ROS映像消息转换为OpenCV映像
+
+CvBridge defines a CvImage type containing an OpenCV image, its encoding and a ROS header. CvImage contains exactly the information sensor_msgs/Image does, so we can convert either representation to the other. CvImage class format:
+CvBridge定义了一个包含OpenCV映像的CvImage类型，它的编码和一个ROS头。 CvImage正好包含了sensor_msgs / Image所做的信息，所以我们可以将任一表示转换为另一个。 CvImage类格式：
+Toggle line numbers
+
+   1 namespace cv_bridge {
+   2 
+   3 class CvImage
+   4 {
+   5 public:
+   6   std_msgs::Header header;
+   7   std::string encoding;
+   8   cv::Mat image;
+   9 };
+  10 
+  11 typedef boost::shared_ptr<CvImage> CvImagePtr;
+  12 typedef boost::shared_ptr<CvImage const> CvImageConstPtr;
+  13 
+  14 }
+
+When converting a ROS sensor_msgs/Image message into a CvImage, CvBridge recognizes two distinct use cases:
+当将ROS sensor_msgs / Image消息转换为CvImage时，CvBridge会识别两种不同的用例：
+
+    We want to modify the data in-place. We have to make a copy of the ROS message data.
+    我们要在现场修改数据。我们必须制作ROS消息数据的副本。
+    We won't modify the data. We can safely share the data owned by the ROS message instead of copying. 
+    我们不会修改数据。我们可以安全地共享ROS消息拥有的数据，而不是复制。
+
+CvBridge provides the following functions for converting to CvImage:
+
+Toggle line numbers
+CvBridge提供以下功能转换为CvImage：
+
+   1 // Case 1: Always copy, returning a mutable CvImage
+   2 CvImagePtr toCvCopy(const sensor_msgs::ImageConstPtr& source,
+   3                     const std::string& encoding = std::string());
+   4 CvImagePtr toCvCopy(const sensor_msgs::Image& source,
+   5                     const std::string& encoding = std::string());
+   6 
+   7 // Case 2: Share if possible, returning a const CvImage
+   8 CvImageConstPtr toCvShare(const sensor_msgs::ImageConstPtr& source,
+   9                           const std::string& encoding = std::string());
+  10 CvImageConstPtr toCvShare(const sensor_msgs::Image& source,
+  11                           const boost::shared_ptr<void const>& tracked_object,
+  12                           const std::string& encoding = std::string());
+
+The input is the image message pointer, as well as an optional encoding argument. The encoding refers to the destination CvImage.
+输入是图像消息指针，以及可选的编码参数。编码是指目标CvImage。
+
+toCvCopy creates a copy of the image data from the ROS message, even when the source and destination encodings match. However, you are free to modify the returned CvImage.
+toCvCopy从ROS消息创建图像数据的副本，即使源和目标编码匹配。但是，您可以自由修改返回的CvImage。
+
+toCvShare will point the returned cv::Mat at the ROS message data, avoiding a copy, if the source and destination encodings match. As long as you hold a copy of the returned CvImage, the ROS message data will not be freed. If the encodings do not match, it will allocate a new buffer and perform the conversion. You are not permitted to modify the returned CvImage, as it may share data with the ROS image message, which in turn may be shared with other callbacks. Note: the second overload of toCvShare is more convenient when you have a pointer to some other message type (e.g. stereo_msgs/DisparityImage) that contains a sensor_msgs/Image you want to convert.
+如果源和目标编码匹配，toCvShare将将返回的cv :: Mat指向ROS消息数据，避免复制。只要持有返回的CvImage的副本，ROS消息数据就不会被释放。如果编码不匹配，它将分配一个新的缓冲区并执行转换。您不能修改返回的CvImage，因为它可能与ROS映像消息共享数据，而ROS映像消息又可能与其他回调共享。注意：当您指向包含要转换的sensor_msgs / Image的其他消息类型（例如stereo_msgs / DisparityImage）时，toCvShare的第二个重载更为方便。
+
+
+If no encoding (or rather, the empty string) is given, the destination image encoding will be the same as the image message encoding. In this case toCvShare is guaranteed to not copy the image data. Image encodings can be any one of the following OpenCV image encodings:
+如果没有给出编码（或者说是空字符串），则目的地图像编码将与图像消息编码相同。在这种情况下，toCvShare保证不复制图像数据。图像编码可以是以下任一OpenCV图像编码：
+
+    8UC[1-4]
+    8SC[1-4]
+    16UC[1-4]
+    16SC[1-4]
+    32SC[1-4]
+    32FC[1-4]
+    64FC[1-4] 
+
+For popular image encodings, CvBridge will optionally do color or pixel depth conversions as necessary. To use this feature, specify the encoding to be one of the following strings:
+对于流行的图像编码，CvBridge将根据需要选择进行颜色或像素深度转换。要使用此功能，请将编码指定为以下字符串之一：
+
+    mono8: CV_8UC1, grayscale image
+
+    mono16: CV_16UC1, 16-bit grayscale image
+
+    bgr8: CV_8UC3, color image with blue-green-red color order
+
+    rgb8: CV_8UC3, color image with red-green-blue color order
+
+    bgra8: CV_8UC4, BGR color image with an alpha channel
+
+    rgba8: CV_8UC4, RGB color image with an alpha channel 
+
+Note that mono8 and bgr8 are the two image encodings expected by most OpenCV functions.
+请注意，mono8和bgr8是大多数OpenCV功能所期望的两个图像编码。
+
+Finally, CvBridge will recognize Bayer pattern encodings as having OpenCV type 8UC1 (8-bit unsigned, one channel). It will not perform conversions to or from Bayer pattern; in a typical ROS system, this is done instead by image_proc. CvBridge recognizes the following Bayer encodings:
+最后，CvBridge将识别Bayer模式编码为OpenCV类型8UC1（8位无符号，一个通道）。 它不会执行到拜耳模式或从拜耳模式转换; 在典型的ROS系统中，这通过image_proc来代替。 CvBridge识别以下拜耳编码：
+
+    bayer_rggb8
+
+    bayer_bggr8
+
+    bayer_gbrg8
+
+    bayer_grbg8 
+3、Converting OpenCV images to ROS image messages
+将OpenCV图像转换为ROS图像消息
+
+To convert a CvImage into a ROS image message, use one the toImageMsg() member function:
+要将CvImage转换为ROS映像消息，请使用一个toImageMsg（）成员函数：
+
+   1 class CvImage
+   2 {
+   3   sensor_msgs::ImagePtr toImageMsg() const;
+   4 
+   5   // Overload mainly intended for aggregate messages that contain
+   6   // a sensor_msgs::Image as a member.
+   7   void toImageMsg(sensor_msgs::Image& ros_image) const;
+   8 };
+
+If the CvImage is one you have allocated yourself, don't forget to fill in the header and encoding fields.
+如果CvImage是您自己分配的，请不要忘记填写标题和编码字段。
+
+For an example of allocating one yourself please see the Publishing Images tutorial.
+有关分配一个的示例，请参阅“发布图像”教程。
+
+4、An example ROS node一个例如ROS节点
+
+Here is a node that listens to a ROS image message topic, converts the image into a cv::Mat, draws a circle on it and displays the image using OpenCV. The image is then republished over ROS.
+这是一个监听ROS映像消息主题的节点，将图像转换为cv :: Mat，在其上绘制一个圆圈，并使用OpenCV显示图像。 然后，图像通过ROS重新发布。
+
+In your package.xml and CMakeLists.xml (or when you use catkin_create_pkg), add the following dependencies:
+在您的package.xml和CMakeLists.xml中（或使用catkin_create_pkg时），添加以下依赖项：
+
+sensor_msgs
+cv_bridge
+roscpp
+std_msgs
+image_transport
+
+Create a image_converter.cpp file in your /src folder and add the following:
+在/ src文件夹中创建一个image_converter.cpp文件，并添加以下内容：
+
+   1 #include <ros/ros.h>
+   2 #include <image_transport/image_transport.h>
+   3 #include <cv_bridge/cv_bridge.h>
+   4 #include <sensor_msgs/image_encodings.h>
+   5 #include <opencv2/imgproc/imgproc.hpp>
+   6 #include <opencv2/highgui/highgui.hpp>
+   7 
+   8 static const std::string OPENCV_WINDOW = "Image window";
+   9 
+  10 class ImageConverter
+  11 {
+  12   ros::NodeHandle nh_;
+  13   image_transport::ImageTransport it_;
+  14   image_transport::Subscriber image_sub_;
+  15   image_transport::Publisher image_pub_;
+  16 
+  17 public:
+  18   ImageConverter()
+  19     : it_(nh_)
+  20   {
+  21     // Subscrive to input video feed and publish output video feed
+  22     image_sub_ = it_.subscribe("/camera/image_raw", 1,
+  23       &ImageConverter::imageCb, this);
+  24     image_pub_ = it_.advertise("/image_converter/output_video", 1);
+  25 
+  26     cv::namedWindow(OPENCV_WINDOW);
+  27   }
+  28 
+  29   ~ImageConverter()
+  30   {
+  31     cv::destroyWindow(OPENCV_WINDOW);
+  32   }
+  33 
+  34   void imageCb(const sensor_msgs::ImageConstPtr& msg)
+  35   {
+  36     cv_bridge::CvImagePtr cv_ptr;
+  37     try
+  38     {
+  39       cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+  40     }
+  41     catch (cv_bridge::Exception& e)
+  42     {
+  43       ROS_ERROR("cv_bridge exception: %s", e.what());
+  44       return;
+  45     }
+  46 
+  47     // Draw an example circle on the video stream
+  48     if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
+  49       cv::circle(cv_ptr->image, cv::Point(50, 50), 10, CV_RGB(255,0,0));
+  50 
+  51     // Update GUI Window输出修改的视频流
+  52     cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+  53     cv::waitKey(3);
+  54 
+  55     // Output modified video stream
+  56     image_pub_.publish(cv_ptr->toImageMsg());
+  57   }
+  58 };
+  59 
+  60 int main(int argc, char** argv)
+  61 {
+  62   ros::init(argc, argv, "image_converter");
+  63   ImageConverter ic;
+  64   ros::spin();
+  65   return 0;
+  66 }
+
+Let's break down the above node:
+让我们分解上面的节点：
+
+Error: No code_block found Using image_transport for publishing and subscribing to images in ROS allows you to subscribe to compressed image streams. Remember to include image_transport in your package.xml.
+错误：找不到code_block使用image_transport发布和订阅ROS中的图像可以订阅压缩的图像流。记住在你的package.xml中加入image_transport。
+
+Error: No code_block found Includes the header for CvBridge as well as some useful constants and functions related to image encodings. Remember to include cv_bridge in your package.xml.
+错误：找不到code_block包括CvBridge的头以及与图像编码相关的一些有用的常量和函数。记得在你的package.xml中加入cv_bridge。
+
+Error: No code_block found Includes the headers for OpenCV's image processing and GUI modules. Remember to include opencv2 in your package.xml.
+错误：找不到code_block包括OpenCV的图像处理和GUI模块的标题。记住在你的package.xml中加入opencv2。
+
+Error: No code_block found Subscribe to an image topic "in" and advertise an image topic "out" using image_transport.
+错误：找不到code_block订阅图像主题“in”，并使用image_transport发布图像主题“输出”。
+
+Error: No code_block found OpenCV HighGUI calls to create/destroy a display window on start-up/shutdown.
+错误：找不到code_block OpenCV HighGUI调用在启动/关闭时创建/销毁显示窗口。
+
+Error: No code_block found In our subscriber callback, we first convert the ROS image message to a CvImage suitable for working with OpenCV. Since we're going to draw on the image, we need a mutable copy of it, so we use toCvCopy(). sensor_msgs::image_encodings::BGR8 is simply a constant for "bgr8", but less susceptible to typos.
+错误：找不到code_block在我们的用户回调中，我们首先将ROS映像消息转换为适合使用OpenCV的CvImage。由于我们要绘制图像，所以我们需要一个可变的副本，所以我们使用CvCopy（）。 sensor_msgs :: image_encodings :: BGR8只是“bgr8”的常量，但不太容易受到打字错误的影响。
+
+Note that OpenCV expects color images to use BGR channel order.
+请注意，OpenCV期望彩色图像使用BGR通道顺序。
+
+You should always wrap your calls to toCvCopy() / toCvShared() to catch conversion errors as those functions will not check for the validity of your data.
+您应该始终将您的调用包含到CvCopy（）/ toCvShared（）以捕获转换错误，因为这些函数将不会检查数据的有效性。
+
+Error: No code_block found Draw a red circle on the image, then show it in the display window.
+错误：找不到code_block在图像上绘制一个红色圆圈，然后在显示窗口中显示。
+
+Error: No code_block found Convert the CvImage to a ROS image message and publish it on the "out" topic.
+错误：找不到code_block将CvImage转换为ROS映像消息，并将其发布在“out”主题上。
+
+To run the node, you will need an image stream. Run a camera or play a bag file to generate the image stream. Now you can run this node, remapping "in" to the actual image stream topic.
+要运行节点，您将需要一个图像流。运行相机或播放包文件以生成图像流。现在您可以运行此节点，将“重新映射”重新映射到实际的图像流主题。
+
+If you have successfully converted images to OpenCV format, you will see a HighGui window with the name "Image window" and your image+circle displayed.
+如果您已成功将图像转换为OpenCV格式，您将看到一个名为“Image window”的HighGui窗口，并显示您的图像+圈。
+
+You can see whether your node is correctly publishing images over ROS using either rostopic or by viewing the images using image_view.
+您可以使用rostopic或通过使用image_view查看图像来查看您的节点是否正确地在ROS上发布图像。
+
+5、Examples of sharing the image data共享图像数据的示例
+
+In the complete example above, we explicitly copied the image data, but sharing (when possible) is equally easy:
+在上面的完整示例中，我们明确地复制了图像数据，但共享（如果可能）同样容易：
+
+   1 namespace enc = sensor_msgs::image_encodings;
+   2 
+   3 void imageCb(const sensor_msgs::ImageConstPtr& msg)
+   4 {
+   5   cv_bridge::CvImageConstPtr cv_ptr;
+   6   try
+   7   {
+   8     cv_ptr = cv_bridge::toCvShare(msg, enc::BGR8);
+   9   }
+  10   catch (cv_bridge::Exception& e)
+  11   {
+  12     ROS_ERROR("cv_bridge exception: %s", e.what());
+  13     return;
+  14   }
+  15 
+  16   // Process cv_ptr->image using OpenCV
+  17 }
+
+If the incoming message has "bgr8" encoding, cv_ptr will alias its data without making a copy. If it has a different but convertible encoding, say "mono8", CvBridge will allocate a new buffer for cv_ptr and perform the conversion. Without the exception handling this would only be one line of code, but then an incoming message with a malformed (or unsupported) encoding would bring down the node. For example, if the incoming image is from the image_raw topic for a Bayer pattern camera, CvBridge will throw an exception because it (intentionally) does not support automatic Bayer-to-color conversion.
+如果传入的消息具有“bgr8”编码，则cv_ptr将不会复制它的数据。如果它具有不同但可转换的编码，例如“mono8”，CvBridge将为cv_ptr分配一个新的缓冲区并执行转换。没有异常处理，这只会是一行代码，但是后来有一个格式不正确（或不支持的）编码的传入消息会导致节点掉线。例如，如果传入的图像来自Bayer模式相机的image_raw主题，CvBridge将抛出异常，因为它（有意）不支持自动拜耳到颜色转换。
+
+A slightly more complicated example:
+一个稍微复杂的例子：
+
+   1 namespace enc = sensor_msgs::image_encodings;
+   2 
+   3 void imageCb(const sensor_msgs::ImageConstPtr& msg)
+   4 {
+   5   cv_bridge::CvImageConstPtr cv_ptr;
+   6   try
+   7   {
+   8     if (enc::isColor(msg->encoding))
+   9       cv_ptr = cv_bridge::toCvShare(msg, enc::BGR8);
+  10     else
+  11       cv_ptr = cv_bridge::toCvShare(msg, enc::MONO8);
+  12   }
+  13   catch (cv_bridge::Exception& e)
+  14   {
+  15     ROS_ERROR("cv_bridge exception: %s", e.what());
+  16     return;
+  17   }
+  18 
+  19   // Process cv_ptr->image using OpenCV
+  20 }
+
+In this case we want to use color if available, otherwise falling back to monochrome. If the incoming image is either "bgr8" or "mono8", we avoid copying data. 
+在这种情况下，我们要使用颜色（如果有的话），否则会回到单色。如果传入的图像是“bgr8”或“mono8”，我们避免复制数据。
