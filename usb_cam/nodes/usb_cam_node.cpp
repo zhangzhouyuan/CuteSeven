@@ -89,7 +89,7 @@ public:
     image_pub_ = it.advertiseCamera("image_raw", 1);
 
     // grab the parameters抓取参数
-    node_.param("video_device", video_device_name_, std::string("/dev/video1"));   //选择摄像头
+    node_.param("video_device", video_device_name_, std::string("/dev/video0"));   //选择摄像头
     node_.param("brightness", brightness_, -1); //0-255, -1 "leave alone"
     node_.param("contrast", contrast_, -1); //0-255, -1 "leave alone"
     node_.param("saturation", saturation_, -1); //0-255, -1 "leave alone"
@@ -100,7 +100,7 @@ public:
     node_.param("image_height", image_height_, 480);
     node_.param("framerate", framerate_, 30);
     // possible values: yuyv, uyvy, mjpeg, yuvmono10, rgb24
-    node_.param("pixel_format", pixel_format_name_, std::string("mjpeg"));
+    node_.param("pixel_format", pixel_format_name_, std::string("yuyv"));
     // enable/disable autofocus启用/禁用自动对焦
     node_.param("autofocus", autofocus_, false);
     node_.param("focus", focus_, -1); //0-255, -1 "leave alone"

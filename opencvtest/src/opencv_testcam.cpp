@@ -13,6 +13,7 @@ class ImageConverter
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
+  //image_transport::Publisher
 
 public:
   ImageConverter()
@@ -45,10 +46,12 @@ public:
     }
 
     // Draw an example circle on the video stream在视频流中绘制一个示例圈
-    if (cv_ptr->image.rows > 50 && cv_ptr->image.cols > 60)
-      cv::circle(cv_ptr->image, cv::Point(100, 50), 10, CV_RGB(255,0,0));
+    if (cv_ptr->image.rows > 100 && cv_ptr->image.cols > 60)
+      cv::circle(cv_ptr->image, cv::Point(50, 50), 10, CV_RGB(255,0,0));
+    //如果图像横向点数大于100，纵向大于60，则在以50,50为中心换一个10的圆，颜色为红
  
     // Update GUI Window更新GUI窗口
+   // cvtColor(cv_ptr->image,image1,CV_BGR2GRAY);
     cv::imshow(OPENCV_WINDOW, cv_ptr->image);
     cv::waitKey(3);
 

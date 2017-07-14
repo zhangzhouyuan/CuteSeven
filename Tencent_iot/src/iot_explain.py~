@@ -50,6 +50,8 @@ def callback(data):
           MusicAvailable = True
         elif(result["bussiness_name"]=="ImgMsg"):
           s1=u"收到一张图片"
+          MusicPlayCommend = '~/catkin_ws/src/GUI/Cute7_GUI show_pic -t 5000 -f '+result["file_path"]
+          MusicAvailable = True
         elif(result["bussiness_name"]=="VideoMsg"):
           s1=u"收到一段视频"
     elif(msg_type=="control"):
@@ -77,7 +79,7 @@ def callback(data):
 
 def timer():
   rate.sleep()
-  os.system("mkfifo /tmp/iot_msg_fifo")
+  #os.system("mkfifo /tmp/iot_msg_fifo")
   read_fd = os.open(readfifo, os.O_RDONLY)  
   while True:  
     in_msg = os.read(read_fd, 1000)  

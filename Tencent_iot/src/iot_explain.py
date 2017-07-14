@@ -50,6 +50,8 @@ def callback(data):
           MusicAvailable = True
         elif(result["bussiness_name"]=="ImgMsg"):
           s1=u"收到一张图片"
+          MusicPlayCommend = '~/catkin_ws/src/GUI/Cute7_GUI show_pic -t 5000 -f '+result["file_path"]
+          MusicAvailable = True
         elif(result["bussiness_name"]=="VideoMsg"):
           s1=u"收到一段视频"
     elif(msg_type=="control"):
@@ -71,7 +73,7 @@ def callback(data):
         
   say(s1)
   if(MusicAvailable):
-    time.sleep(5)
+    time.sleep(2)
     os.system(MusicPlayCommend)
     MusicAvailable = False
 

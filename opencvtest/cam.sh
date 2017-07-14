@@ -6,7 +6,8 @@ run()
 }
 echo "准备启动"
 run "roscore"
-sleep 1
-run "roslaunch usb_cam usb_cam-test.launch"
-sleep 1
+sleep 3
+#run "roslaunch usb_cam usb_cam-test.launch"
+run "rosrun usb_cam usb_cam_node"
+sleep 3
 run "rosrun opencvtest opencv_testcam "

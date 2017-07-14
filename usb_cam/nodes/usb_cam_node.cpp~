@@ -88,41 +88,41 @@ public:
     image_transport::ImageTransport it(node_);
     image_pub_ = it.advertiseCamera("image_raw", 1);
 
-    // grab the parameters
-    node_.param("video_device", video_device_name_, std::string("/dev/video1"));   //选择摄像头
+    // grab the parameters抓取参数
+    node_.param("video_device", video_device_name_, std::string("/dev/video0"));   //选择摄像头
     node_.param("brightness", brightness_, -1); //0-255, -1 "leave alone"
     node_.param("contrast", contrast_, -1); //0-255, -1 "leave alone"
     node_.param("saturation", saturation_, -1); //0-255, -1 "leave alone"
     node_.param("sharpness", sharpness_, -1); //0-255, -1 "leave alone"
-    // possible values: mmap, read, userptr
+    // possible values: mmap, read, userptr可能的值：mmap，read，userptr
     node_.param("io_method", io_method_name_, std::string("mmap"));
     node_.param("image_width", image_width_, 640);
     node_.param("image_height", image_height_, 480);
     node_.param("framerate", framerate_, 30);
     // possible values: yuyv, uyvy, mjpeg, yuvmono10, rgb24
-    node_.param("pixel_format", pixel_format_name_, std::string("mjpeg"));
-    // enable/disable autofocus
+    node_.param("pixel_format", pixel_format_name_, std::string("yuyv"));
+    // enable/disable autofocus启用/禁用自动对焦
     node_.param("autofocus", autofocus_, false);
     node_.param("focus", focus_, -1); //0-255, -1 "leave alone"
-    // enable/disable autoexposure
+    // enable/disable autoexposure启用/禁用自动曝光
     node_.param("autoexposure", autoexposure_, true);
     node_.param("exposure", exposure_, 100);
     node_.param("gain", gain_, -1); //0-100?, -1 "leave alone"
-    // enable/disable auto white balance temperature
+    // enable/disable auto white balance temperature启用/禁用自动白平衡温度
     node_.param("auto_white_balance", auto_white_balance_, true);
     node_.param("white_balance", white_balance_, 4000);
 
-    // load the camera info
+    // load the camera info加载相机信息
     node_.param("camera_frame_id", img_.header.frame_id, std::string("head_camera"));
     node_.param("camera_name", camera_name_, std::string("head_camera"));
     node_.param("camera_info_url", camera_info_url_, std::string(""));
     cinfo_.reset(new camera_info_manager::CameraInfoManager(node_, camera_name_, camera_info_url_));
 
-    // create Services
+    // create Services创建服务
     service_start_ = node_.advertiseService("start_capture", &UsbCamNode::service_start_cap, this);
     service_stop_ = node_.advertiseService("stop_capture", &UsbCamNode::service_stop_cap, this);
 
-    // check for default camera info
+    // check for default camera info检查默认相机信息
     if (!cinfo_->isCalibrated())
     {
       cinfo_->setCameraName(video_device_name_);

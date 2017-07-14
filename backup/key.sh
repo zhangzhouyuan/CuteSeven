@@ -51,6 +51,10 @@ GetKey()
 			l) echo "wakeup"
 			wakeup
 			;;
+			p) echo "mb_icu"
+			gnome-terminal -t "icu Node" -x bash -c "cd ~/catkin_ws/src/GUI/;./Cute7_GUI mb_icu -t 60000"
+			;;
+
 		
 		esac
 		
