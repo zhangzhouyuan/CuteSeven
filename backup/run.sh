@@ -1,20 +1,20 @@
 #!/bin/bash
 run()
 {
-	gnome-terminal -t "Main Node" -x bash -c "$1"
-
+	guake -n "cute" -e  "$1" 
 }
 echo "准备启动"
+cd /home/robot7/catkin_ws/src/
 mkfifo /tmp/my_fifo_wakeup
 mkfifo /tmp/iot_msg_fifo
-run "roscore"
+guake  -e "roscore" & 
 sleep 3
 run "roslaunch xf_voice voice.launch"
 sleep 3
-run " rosrun car car"
+run "rosrun car car"
 sleep 3
-run "rosrun tx_iot iot_explain.py"
-sleep 10
-run " ~/catkin_ws/src/Tencent_iot/tx_iot_sdk/run.sh"
-sleep 3
-run " ~/catkin_ws/src/backup/key.sh"
+#run "rosrun tx_iot iot_explain.py"
+#`sleep 10
+#run "./Tencent_iot/tx_iot_sdk/run.sh"
+#sleep 3
+run "./backup/key.sh"

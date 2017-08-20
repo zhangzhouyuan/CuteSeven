@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "xf_comom.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -15,7 +16,7 @@ typedef int SR_DWORD;
 typedef short int SR_WORD ;
 /* wav音频头部格式 */
 typedef struct _wave_pcm_hdr
-{
+{/*{{{*/
 	char            riff[4];                // = "RIFF"
 	int				size_8;                 // = FileSize - 8
 	char            wave[4];                // = "WAVE"
@@ -31,10 +32,10 @@ typedef struct _wave_pcm_hdr
 
 	char            data[4];                // = "data";
 	int				data_size;              // = 纯数据长度 : FileSize - 44 
-} wave_pcm_hdr;
+} wave_pcm_hdr;/*}}}*/
 /* 默认wav音频头部数据 */
 wave_pcm_hdr default_wav_hdr = 
-{
+{/*{{{*/
 	{ 'R', 'I', 'F', 'F' },
 	0,
 	{'W', 'A', 'V', 'E'},
@@ -48,10 +49,10 @@ wave_pcm_hdr default_wav_hdr =
 	16,
 	{'d', 'a', 't', 'a'},
 	0  
-};
+};/*}}}*/
 /* 文本合成 */
 int text_to_speech(const char* src_text, const char* des_path, const char* params)
-{
+{/*{{{*/
 	int          ret          = -1;
 	FILE*        fp           = NULL;
 	const char*  sessionID    = NULL;
@@ -97,7 +98,7 @@ int text_to_speech(const char* src_text, const char* des_path, const char* param
 		if (NULL != data)
 		{
 			fwrite(data, audio_len, 1, fp);
-		    wav_hdr.data_size += audio_len; //计算data_size大小
+			wav_hdr.data_size += audio_len; //计算data_size大小
 		}
 		if (MSP_TTS_FLAG_DATA_END == synth_status)
 			break;
@@ -126,13 +127,10 @@ int text_to_speech(const char* src_text, const char* des_path, const char* param
 		printf("QTTSSessionEnd failed, error code: %d.\n",ret);
 	}
 	return ret;
-}
-
+}/*}}}*/
 int xf_tts(const char* text,const char *filename)
 {
 	int         ret                  = MSP_SUCCESS;
-	const char* login_params         = "appid = 5953150d , work_dir = .";//登录参数,appid与msc库绑定,请勿随意改动
-    const char* session_begin_params = "engine_type =cloud, text_encoding = UTF8, tts_res_path = fo|/Robot/voice/bin/msc/res/tts/xiaoyan.jet;fo|/Robot/voice/bin/msc/res/tts/common.jet, sample_rate = 16000, speed = 50, volume = 50, pitch = 50, rdn = 2";
 	/* 用户登录 */
 	ret = MSPLogin(NULL, NULL, login_params); //第一个参数是用户名，第二个参数是密码，第三个参数是登录参数，用户名和密码可在http://open.voicecloud.cn注册获取
 	if (MSP_SUCCESS != ret)
@@ -155,25 +153,25 @@ exit:
 }
 void xfcallback(const std_msgs::String::ConstPtr& msg)
 {
-  char cmd[2000];
-  std::cout<<"I heard,I will say:"<<msg->data.c_str()<<std::endl;
-  xf_tts(msg->data.c_str(),"/tmp/say.wav");
-  sprintf(cmd,"echo %s>/tmp/saywords",msg->data.c_str());
-  popen(cmd,"r");
-  SAYIT;
+	char cmd[2000];
+	std::cout<<"I heard,I will say:"<<msg->data.c_str()<<std::endl;
+	xf_tts(msg->data.c_str(),"/tmp/say.wav");
+	sprintf(cmd,"echo %s>/tmp/saywords",msg->data.c_str());
+	popen(cmd,"r");
+	SAYIT;
 }
 int main(int argc,char **argv)
 {
-    system("mkfifo /tmp/Mplayer_cmd");
-    popen("mplayer -quiet -slave -input file=/tmp/Mplayer_cmd -idle","r");
-    printf("Mplayer Run Success");
-    const char* filename        = "/tmp/say.wav"; //合成的语音文件名称
-    const char* text                 = "语音合成模块启动成功！"; //合成文本
-    xf_tts(text,filename);
-    SAYIT;
-    ros::init(argc,argv,"xf_tts");
+	system("mkfifo /tmp/Mplayer_cmd");
+	popen("mplayer -quiet -slave -input file=/tmp/Mplayer_cmd -idle","r");
+	printf("Mplayer Run Success");
+	const char* filename        = "/tmp/say.wav"; //合成的语音文件名称
+	const char* text                 = "语音合成模块启动成功！"; //合成文本
+	xf_tts(text,filename);
+	SAYIT;
+	ros::init(argc,argv,"xf_tts");
 	ros::NodeHandle n;
 	ros::Subscriber sub =n.subscribe("xfsaywords",1000,xfcallback);
-    ros::spin();
+	ros::spin();
 	return 0;
 }

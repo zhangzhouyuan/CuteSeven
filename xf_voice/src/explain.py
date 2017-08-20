@@ -14,16 +14,20 @@ pub_cmd = rospy.Publisher('/control_cmd', String, queue_size=10)
 rospy.init_node('explainer')
 rate = rospy.Rate(10)
 rate.sleep()
-def say(mystr):
+def say(mystr,ask):
     rate.sleep()
     pub.publish(mystr)
     print("I will say:%s"%(mystr))
+    cmd=u"~/catkin_ws/src/GUI/hello -t 60000 -a \'" + ask + u"\' -s \'" + mystr +u"\' &"
+    os.system(cmd);
+    print(cmd)
 def sendcmd(mycmd):
     rate.sleep()
     pub_cmd.publish(mycmd)
     print("I will say:%s"%(mycmd))
 def callback(data):
-    s1=""
+    s1=u" "
+    s2=u" "
     openQAState = False
     openQACommend = '' #存储问答得到的命令
 
@@ -31,6 +35,8 @@ def callback(data):
     MusicAvailable = False
     result=demjson.decode(data.data)
     print data.data
+    if(result.has_key("text")):
+        s2=result["text"]
     if(result.has_key("service")):
         service=result["service"]
         if(service=="chat"):
@@ -64,8 +70,9 @@ def callback(data):
             s1 = u"正在创建提醒事项... ...好的,我会提醒你"
                    # result["semantic"]["slots"]["datatime"]["dateOrig"]+\
                    # result["semantic"]["content"]["datatime"]["timeOrig"]
-                    
-    say(s1)
+    else:
+        s1+=u"对不起，没听明白"
+    say(s1,s2)
     if(MusicAvailable):
         time.sleep(1)
         os.system(MusicPlayCommend)
@@ -74,7 +81,7 @@ def callback(data):
 if __name__ == '__main__':
     try:
         rospy.Subscriber("xfunderstand", String, callback)
-        say(u"语音解释初始化成功")
+        say(u"语音解释初始化成功",u"startup")
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
